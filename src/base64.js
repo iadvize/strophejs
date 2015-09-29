@@ -14,12 +14,36 @@
 }(this, function () {
     var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
+    function utf16to8(str) {
+        /* Convert UTF-16 to UTF-8. Adds support for UTF-16 encoded Chinese usernames.
+         * https://github.com/strophe/strophejs/pull/136
+         */
+        var out = "",
+            len = str.length,
+            i, c;
+        for (i=0; i<len; i++) {
+            c = str.charCodeAt(i);
+            if ((c >= 0x0000) && (c <= 0x007F)) {
+                out += str.charAt(i);
+            } else if (c > 0x07FF) {
+                out += String.fromCharCode(0xE0 | ((c >> 12) & 0x0F));
+                out += String.fromCharCode(0x80 | ((c >>  6) & 0x3F));
+                out += String.fromCharCode(0x80 | ((c >>  0) & 0x3F));
+            } else {
+                out += String.fromCharCode(0xC0 | ((c >>  6) & 0x1F));
+                out += String.fromCharCode(0x80 | ((c >>  0) & 0x3F));
+            }
+        }
+        return out;
+    }
+
     var obj = {
         /**
          * Encodes a string in base64
          * @param {String} input The string to encode in base64.
          */
         encode: function (input) {
+            input = utf16to8(input);
             var output = "";
             var chr1, chr2, chr3;
             var enc1, enc2, enc3, enc4;
