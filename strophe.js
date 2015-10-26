@@ -1,27 +1,3 @@
-/** File: strophe.js
- *  A JavaScript library for XMPP BOSH/XMPP over Websocket.
- *
- *  This is the JavaScript version of the Strophe library.  Since JavaScript
- *  had no facilities for persistent TCP connections, this library uses
- *  Bidirectional-streams Over Synchronous HTTP (BOSH) to emulate
- *  a persistent, stateful, two-way connection to an XMPP server.  More
- *  information on BOSH can be found in XEP 124.
- *
- *  This version of Strophe also works with WebSockets.
- *  For more information on XMPP-over WebSocket see this RFC:
- *  http://tools.ietf.org/html/rfc7395
- */
-
-/* All of the Strophe globals are defined in this special function below so
- * that references to the globals become closures.  This will ensure that
- * on page reload, these references will still be available to callbacks
- * that are still executing.
- */
-
-/* jshint ignore:start */
-(function (callback) {
-/* jshint ignore:end */
-
 // This code was written by Tyler Akins and has been placed in the
 // public domain.  It would be nice if you left this header intact.
 // Base64 code from Tyler Akins -- http://rumkin.com
@@ -531,6 +507,18 @@ return {
 */
 
 /* jshint undef: true, unused: true:, noarg: true, latedef: true */
+/* global define */
+
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define('strophe-polyfill', [], function () {
+            return factory();
+        });
+    } else {
+        // Browser globals
+        return factory();
+    }
+}(this, function () {
 
 /** PrivateFunction: Function.prototype.bind
  *  Bind a function to an instance.
@@ -613,7 +601,7 @@ if (!Array.prototype.indexOf)
             return -1;
         };
     }
-
+}));
 /*
     This program is distributed under the terms of the MIT license.
     Please see the LICENSE file for details.
@@ -637,18 +625,12 @@ if (!Array.prototype.indexOf)
     } else {
         // Browser globals
         var o = factory(root.SHA1, root.Base64, root.MD5);
-        window.Strophe =        o.Strophe;
-        window.$build =         o.$build;
-        window.$iq =            o.$iq;
-        window.$msg =           o.$msg;
-        window.$pres =          o.$pres;
-        window.SHA1 =           o.SHA1;
-        window.Base64 =         o.Base64;
-        window.MD5 =            o.MD5;
-        window.b64_hmac_sha1 =  o.SHA1.b64_hmac_sha1;
-        window.b64_sha1 =       o.SHA1.b64_sha1;
-        window.str_hmac_sha1 =  o.SHA1.str_hmac_sha1;
-        window.str_sha1 =       o.SHA1.str_sha1;
+
+        root.Strophe =        o.Strophe;
+        root.$build =         o.$build;
+        root.$iq =            o.$iq;
+        root.$msg =           o.$msg;
+        root.$pres =          o.$pres;
     }
 }(this, function (SHA1, Base64, MD5) {
 
@@ -712,7 +694,7 @@ Strophe = {
      *  The version of the Strophe library. Unreleased builds will have
      *  a version of head-HASH where HASH is a partial revision.
      */
-    VERSION: "1.2.3",
+    VERSION: "2.0.0",
 
     /** Constants: XMPP Namespace Constants
      *  Common namespace constants from the XMPP RFCs and XEPs.
@@ -4060,7 +4042,7 @@ return {
         });
     } else {
         // Browser globals
-        return factory(Strophe, $build);
+        return factory(root.Strophe, root.$build);
     }
 }(this, function (Strophe, $build) {
 
@@ -4996,7 +4978,7 @@ return Strophe;
         });
     } else {
         // Browser globals
-        return factory(Strophe, $build);
+        return factory(root.Strophe, root.$build);
     }
 }(this, function (Strophe, $build) {
 
@@ -5506,18 +5488,3 @@ Strophe.Websocket.prototype = {
 };
 return Strophe;
 }));
-
-/* jshint ignore:start */
-if (callback) {
-    return callback(Strophe, $build, $msg, $iq, $pres);
-}
-
-
-})(function (Strophe, build, msg, iq, pres) {
-    window.Strophe = Strophe;
-    window.$build = build;
-    window.$msg = msg;
-    window.$iq = iq;
-    window.$pres = pres;
-});
-/* jshint ignore:end */
