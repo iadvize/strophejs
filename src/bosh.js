@@ -18,9 +18,11 @@
         });
     } else {
         // Browser globals
-        return factory(root.Strophe, root.$build);
+        return factory(root.Strophe, root.$build, root.polyfills);
     }
-}(this, function (Strophe, $build) {
+}(this, function (Strophe, $build, polyfills) {
+
+var bind = polyfills.bind;
 
 /** PrivateClass: Strophe.Request
  *  _Private_ helper class that provides a cross implementation abstraction
@@ -125,7 +127,7 @@ Strophe.Request.prototype = {
         }
 
         // use Function.bind() to prepend ourselves as an argument
-        xhr.onreadystatechange = this.func.bind(null, this);
+        xhr.onreadystatechange = bind(this.func, null, this);
 
         return xhr;
     }
@@ -254,8 +256,8 @@ Strophe.Bosh.prototype = {
 
         this._requests.push(
             new Strophe.Request(body.tree(),
-                                this._onRequestStateChange.bind(
-                                    this, _connect_cb.bind(this._conn)),
+                                bind(this._onRequestStateChange,
+                                    this, bind(_connect_cb, this._conn)),
                                 body.tree().getAttribute("rid")));
         this._throttledRequestHandler();
     },
@@ -467,15 +469,15 @@ Strophe.Bosh.prototype = {
     _no_auth_received: function (_callback)
     {
         if (_callback) {
-            _callback = _callback.bind(this._conn);
+            _callback = bind(_callback, this._conn);
         } else {
-            _callback = this._conn._connect_cb.bind(this._conn);
+            _callback = bind(this._conn._connect_cb, this._conn);
         }
         var body = this._buildBody();
         this._requests.push(
                 new Strophe.Request(body.tree(),
-                    this._onRequestStateChange.bind(
-                        this, _callback.bind(this._conn)),
+                    bind(this._onRequestStateChange,
+                        this, bind(_callback, this._conn)),
                     body.tree().getAttribute("rid")));
         this._throttledRequestHandler();
     },
@@ -544,8 +546,8 @@ Strophe.Bosh.prototype = {
             this._conn._data = [];
             this._requests.push(
                 new Strophe.Request(body.tree(),
-                                    this._onRequestStateChange.bind(
-                                        this, this._conn._dataRecv.bind(this._conn)),
+                                    bind(this._onRequestStateChange,
+                                        this, bind(this._conn._dataRecv, this._conn)),
                                     body.tree().getAttribute("rid")));
             this._throttledRequestHandler();
         }
@@ -870,8 +872,8 @@ Strophe.Bosh.prototype = {
         }
 
         var req = new Strophe.Request(body.tree(),
-                                      this._onRequestStateChange.bind(
-                                          this, this._conn._dataRecv.bind(this._conn)),
+                                      bind(this._onRequestStateChange,
+                                          this, bind(this._conn._dataRecv, this._conn)),
                                       body.tree().getAttribute("rid"));
 
         this._requests.push(req);
@@ -886,7 +888,7 @@ Strophe.Bosh.prototype = {
     _send: function () {
         clearTimeout(this._conn._idleTimeout);
         this._throttledRequestHandler();
-        this._conn._idleTimeout = setTimeout(this._conn._onIdle.bind(this._conn), 100);
+        this._conn._idleTimeout = setTimeout(bind(this._conn._onIdle, this._conn), 100);
     },
 
     /** PrivateFunction: _sendRestart
