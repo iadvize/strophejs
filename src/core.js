@@ -2802,11 +2802,11 @@ Strophe.Connection.prototype = {
         }
 
         // TODO - need to grab errors
-        var bind = elem.getElementsByTagName("bind");
+        var _bind = elem.getElementsByTagName("bind");
         var jidNode;
-        if (bind.length > 0) {
+        if (_bind.length > 0) {
             // Grab jid
-            jidNode = bind[0].getElementsByTagName("jid");
+            jidNode = _bind[0].getElementsByTagName("jid");
             if (jidNode.length > 0) {
                 this.jid = Strophe.getText(jidNode[0]);
 
