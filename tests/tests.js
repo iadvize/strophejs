@@ -117,7 +117,7 @@ define([
 					"Namespace should be '" + Strophe.NS.CLIENT + "'");
 			});
 		});
-		
+
         test("Strophe.Connection.prototype.send() accepts Builders (#27)", function () {
             var stanza = $pres();
             var conn = new Strophe.Connection("");
@@ -159,6 +159,33 @@ define([
             equal(sendStub.getCalls()[1].thisValue.withCredentials, true);
             sendStub.restore();
             timeoutStub.restore();
+        });
+
+        test("content type can be set on the XMLHttpRequest object", function () {
+            var stanza = $pres();
+            // Stub XMLHttpRequest.protototype.send so that it doesn't
+            // actually try to send out the request.
+            var sendStub = sinon.stub(XMLHttpRequest.prototype, "send");
+            // Stub setTimeout to immediately call functions, otherwise our
+            // assertions fail due to async execution.
+            var timeoutStub = sinon.stub(window, "setTimeout", function (func) {
+                func.apply(arguments);
+            });
+            var setRetRequestHeaderStub = sinon.stub(XMLHttpRequest.prototype, "setRequestHeader");
+            var conn = new Strophe.Connection("example.org");
+            conn.send(stanza);
+            equal(setRetRequestHeaderStub.getCalls()[0].args[0], "Content-Type");
+            equal(setRetRequestHeaderStub.getCalls()[0].args[1], "text/xml; charset=utf-8");
+
+            conn = new Strophe.Connection(
+                    "example.org",
+                    { contentType: "text/plain; charset=utf-8" });
+            conn.send(stanza);
+            equal(setRetRequestHeaderStub.getCalls()[1].args[0], "Content-Type");
+            equal(setRetRequestHeaderStub.getCalls()[1].args[1], "text/plain; charset=utf-8");
+            sendStub.restore();
+            timeoutStub.restore();
+            setRetRequestHeaderStub.restore();
         });
 
         test("Cookies can be added to the document passing them as options to Strophe.Connection", function () {
@@ -295,7 +322,7 @@ define([
 											.createTextNode('<>&lt;&gt;'));
 			equal(cloned.nodeValue, '<>&lt;&gt;');
 		});
-		
+
 		test("XML serializing", function() {
 			var parser = new DOMParser();
 			// Attributes
@@ -310,7 +337,7 @@ define([
 			var element4 = parser.parseFromString("<foo attr='&lt;a> &apos;b&apos;'>bar</foo>","text/xml").documentElement;
 			equal(Strophe.serialize(element4), "<foo attr='&lt;a&gt; &apos;b&apos;'>bar</foo>", "should be serialized");
 			var element5 = parser.parseFromString("<foo attr=\"&lt;a> &quot;b&quot;\">bar</foo>","text/xml").documentElement;
-			equal(Strophe.serialize(element5), "<foo attr='&lt;a&gt; \"b\"'>bar</foo>", "should be serialized");
+			equal(Strophe.serialize(element5), "<foo attr='&lt;a&gt; &quot;b&quot;'>bar</foo>", "should be serialized");
 			// Empty elements
 			var element6 = parser.parseFromString("<foo><empty></empty></foo>","text/xml").documentElement;
 			equal(Strophe.serialize(element6), "<foo><empty/></foo>", "should be serialized");
@@ -332,7 +359,7 @@ define([
 
 		test("Full JID matching", function () {
 			var elem = $msg({from: 'darcy@pemberley.lit/library'}).tree();
-			
+
 			var hand = new Strophe.Handler(null, null, null, null, null,
 										'darcy@pemberley.lit/library');
 			equal(hand.isMatch(elem), true, "Full JID should match");
@@ -349,7 +376,7 @@ define([
 										'darcy@pemberley.lit/library',
 										{matchBare: true});
 			equal(hand.isMatch(elem), true, "Full JID should match");
-			
+
 			hand = new Strophe.Handler(null, null, null, null, null,
 									'darcy@pemberley.lit',
 									{matchBare: true});
@@ -376,7 +403,7 @@ define([
 			hand = new Strophe.Handler(null, null, 'iq', ['error', 'result']);
 			equal(hand.isMatch(elem), true, "The handler should match if stanza type is in array of types");
 		});
-		
+
 		module("Misc");
 
 		test("Quoting strings", function () {
@@ -465,13 +492,11 @@ define([
 
 		module("SASL Mechanisms");
 
-		test("SASL Plain Auth", function () {
+		test("SASL PLAIN Auth", function () {
 			var conn = {pass: "password", authcid: "user", authzid: "user@xmpp.org"};
-
-			ok(Strophe.SASLPlain.test(conn), "plain should pass the test");
-
 			var saslplain = new Strophe.SASLPlain();
 			saslplain.onStart(conn);
+			ok(saslplain.test(conn), "PLAIN is enabled by default.");
 			var response = saslplain.onChallenge(conn, null);
 			equal(response, [conn.authzid, conn.authcid, conn.pass].join("\u0000"),
 				"checking plain auth challenge");
@@ -493,9 +518,9 @@ define([
              */
             var conn = {pass: "pencil", authcid: "user",
                         authzid: "user@xmpp.org", _sasl_data: []};
-            ok(Strophe.SASLSHA1.test(conn), "sha-1 should pass the test");
             var saslsha1 = new Strophe.SASLSHA1();
             saslsha1.onStart(conn);
+            ok(saslsha1.test(conn), "SHA-1 is enabled by default.");
             // test taken from example section on:
             // URL: http://tools.ietf.org/html/rfc5802#section-5
             var response = saslsha1.onChallenge(conn, null, "fyko+d2lbbFgONRv9qkxdawL");
@@ -513,9 +538,9 @@ define([
 						domain: "elwood.innosoft.com",
 						_sasl_data: []};
 
-			ok(Strophe.SASLMD5.test(conn), "md-5 should pass the test");
 			var saslmd5 = new Strophe.SASLMD5();
 			saslmd5.onStart(conn);
+			ok(saslmd5.test(conn), "DIGEST MD-5 is enabled by default.");
 			// test taken from example section on:
 			// URL: http://www.ietf.org/rfc/rfc2831.txt
 			var response = saslmd5.onChallenge(conn, "realm=\"elwood.innosoft.com\",nonce=\"OA6MG9tEQGm2hh\",qop=\"auth\",algorithm=md5-sess,charset=utf-8", "OA6MHXh6VqTrRk");
@@ -524,6 +549,27 @@ define([
 			response = saslmd5.onChallenge(conn, "rspauth=ea40f60335c427b5527b84dbabcdfffd");
 			equal(response, "", "checking second auth challenge");
 			saslmd5.onSuccess();
+		});
+
+		test("SASL EXTERNAL Auth", function () {
+			var conn = {pass: "password", authcid: "user", authzid: "user@xmpp.org"};
+			var sasl_external = new Strophe.SASLExternal();
+			ok(sasl_external.test(conn), "EXTERNAL is enabled by default.");
+			sasl_external.onStart(conn);
+
+			var response = sasl_external.onChallenge(conn, null);
+			equal(response, conn.authzid,
+                 "Response to EXTERNAL auth challenge should be authzid if different authcid was passed in.");
+			sasl_external.onSuccess();
+
+			conn = {pass: "password", authcid: "user", authzid: "user@xmpp.org"};
+			sasl_external = new Strophe.SASLExternal();
+			ok(sasl_external.test(conn), "EXTERNAL is enabled by default.");
+			sasl_external.onStart(conn);
+			response = sasl_external.onChallenge(conn, null);
+			equal(response, conn.authzid,
+                 "Response to EXTERNAL auth challenge should be empty string if authcid = authzid");
+			sasl_external.onSuccess();
 		});
 
 		module("BOSH Session resumption");

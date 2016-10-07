@@ -6,7 +6,7 @@
 */
 
 /* jshint undef: true, unused: true:, noarg: true, latedef: true */
-/* global define, window, clearTimeout, WebSocket, DOMParser, Strophe, $build */
+/* global define, window, clearTimeout, WebSocket, DOMParser */
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
